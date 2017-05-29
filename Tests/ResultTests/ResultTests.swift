@@ -66,10 +66,6 @@ final class ResultTests: XCTestCase {
 		XCTAssert(Result<(), NSError>.error().function == function)
 	}
 
-//	These tests fail on linux, root cause possibly https://bugs.swift.org/browse/SR-3565
-//  Try again when it's fixed
-	#if !os(Linux)
-
 	func testAnyErrorDelegatesLocalizedDescriptionToUnderlyingError() {
 		XCTAssertEqual(error.errorDescription, "localized description")
 		XCTAssertEqual(error.localizedDescription, "localized description")
@@ -88,8 +84,6 @@ final class ResultTests: XCTestCase {
 	func testAnyErrorDelegatesLocalizedHelpAnchorToUnderlyingError() {
 		XCTAssertEqual(error.helpAnchor, "help anchor")
 	}
-
-	#endif
 
 	// MARK: Try - Catch
 	
@@ -115,6 +109,14 @@ final class ResultTests: XCTestCase {
 
 		let result: Result<String, AnyError> = Result(attempt: function)
 		XCTAssert(result.error == error)
+	}
+
+	func testTryCatchWithFunctionThrowingNonAnyErrorCanProducesAnyErrorFailures() {
+		let nsError = NSError(domain: "", code: 0)
+		let function: () throws -> String = { throw nsError }
+
+		let result: Result<String, AnyError> = Result(attempt: function)
+		XCTAssert(result.error == AnyError(nsError))
 	}
 
 	func testMaterializeProducesSuccesses() {
@@ -213,22 +215,10 @@ final class ResultTests: XCTestCase {
 	}
 }
 
-final class NoErrorTests: XCTestCase {
-	static var allTests: [(String, (NoErrorTests) -> () throws -> Void)] {
-		return [ ("testEquatable", testEquatable) ]
-	}
-
-	func testEquatable() {
-		let foo = Result<Int, NoError>(1)
-		let bar = Result<Int, NoError>(1)
-		XCTAssertTrue(foo == bar)
-	}
-}
-
 
 // MARK: - Fixtures
 
-private enum Error: Swift.Error, LocalizedError {
+enum Error: Swift.Error, LocalizedError {
 	case a, b
 
 	var errorDescription: String? {
@@ -331,13 +321,10 @@ extension ResultTests {
 //			("testTryProducesSuccessesForOptionalAPI", testTryProducesSuccessesForOptionalAPI),
 			("testTryMapProducesSuccess", testTryMapProducesSuccess),
 			("testTryMapProducesFailure", testTryMapProducesFailure),
-
-//			These tests fail on linux, root cause possibly https://bugs.swift.org/browse/SR-3565
-//          Try again when it's fixed
-//			("testAnyErrorDelegatesLocalizedDescriptionToUnderlyingError", testAnyErrorDelegatesLocalizedDescriptionToUnderlyingError),
-//			("testAnyErrorDelegatesLocalizedFailureReasonToUnderlyingError", testAnyErrorDelegatesLocalizedFailureReasonToUnderlyingError),
-//			("testAnyErrorDelegatesLocalizedRecoverySuggestionToUnderlyingError", testAnyErrorDelegatesLocalizedRecoverySuggestionToUnderlyingError),
-//			("testAnyErrorDelegatesLocalizedHelpAnchorToUnderlyingError", testAnyErrorDelegatesLocalizedHelpAnchorToUnderlyingError),
+			("testAnyErrorDelegatesLocalizedDescriptionToUnderlyingError", testAnyErrorDelegatesLocalizedDescriptionToUnderlyingError),
+			("testAnyErrorDelegatesLocalizedFailureReasonToUnderlyingError", testAnyErrorDelegatesLocalizedFailureReasonToUnderlyingError),
+			("testAnyErrorDelegatesLocalizedRecoverySuggestionToUnderlyingError", testAnyErrorDelegatesLocalizedRecoverySuggestionToUnderlyingError),
+			("testAnyErrorDelegatesLocalizedHelpAnchorToUnderlyingError", testAnyErrorDelegatesLocalizedHelpAnchorToUnderlyingError),
 		]
 	}
 }
